@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/c-malecki/go-utils/parse/slice"
+	"github.com/c-malecki/go-utils/parse/pslice"
 )
 
 type BatchInsertDesc[T any] struct {
@@ -16,7 +16,7 @@ type BatchInsertDesc[T any] struct {
 }
 
 type BatchInsertResult[T any] struct {
-	ID     uint32
+	ID     int64
 	Entity T
 }
 
@@ -35,7 +35,7 @@ func BatchInsert[T any](ctx context.Context, db *sql.DB, desc BatchInsertDesc[T]
 	// max bind variables is 65,536 but using 40000 to cut down on batch sizing
 	size := 40000 / count
 
-	split := slice.SubSlice(desc.Items, size)
+	split := pslice.SubSlice(desc.Items, size)
 	for _, sub := range split {
 		tx, err := db.Begin()
 		if err != nil {
@@ -69,7 +69,7 @@ func BatchInsert[T any](ctx context.Context, db *sql.DB, desc BatchInsertDesc[T]
 		}
 
 		for i, v := range sub {
-			id := uint32(firstId) + uint32(i)
+			id := int64(firstId) + int64(i)
 			results = append(results, BatchInsertResult[T]{
 				ID:     id,
 				Entity: v,
@@ -95,7 +95,7 @@ func BatchInsertWithTx[T any](ctx context.Context, tx *sql.Tx, desc BatchInsertD
 	// max bind variables is 65,536 but using 40000 to cut down on batch sizing
 	size := 40000 / count
 
-	split := slice.SubSlice(desc.Items, size)
+	split := pslice.SubSlice(desc.Items, size)
 	for _, sub := range split {
 		placeholders := make([]string, 0)
 		args := make([]interface{}, 0)
@@ -119,7 +119,7 @@ func BatchInsertWithTx[T any](ctx context.Context, tx *sql.Tx, desc BatchInsertD
 		}
 
 		for i, v := range sub {
-			id := uint32(firstId) + uint32(i)
+			id := int64(firstId) + int64(i)
 			results = append(results, BatchInsertResult[T]{
 				ID:     id,
 				Entity: v,
@@ -130,8 +130,8 @@ func BatchInsertWithTx[T any](ctx context.Context, tx *sql.Tx, desc BatchInsertD
 	return results, nil
 }
 
-func InsertManyAndReturnIDsWithTx(ctx context.Context, tx *sql.Tx, query string, args []interface{}) ([]uint32, error) {
-	createdIds := make([]uint32, 0)
+func InsertManyAndReturnIDsWithTx(ctx context.Context, tx *sql.Tx, query string, args []interface{}) ([]int64, error) {
+	createdIds := make([]int64, 0)
 
 	res, err := tx.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -152,7 +152,7 @@ func InsertManyAndReturnIDsWithTx(ctx context.Context, tx *sql.Tx, query string,
 	curId := firstId
 
 	for curId <= lastId {
-		id := uint32(curId)
+		id := int64(curId)
 		createdIds = append(createdIds, id)
 		curId += 1
 	}
@@ -160,8 +160,8 @@ func InsertManyAndReturnIDsWithTx(ctx context.Context, tx *sql.Tx, query string,
 	return createdIds, nil
 }
 
-func InsertManyAndReturnIDs(ctx context.Context, db *sql.DB, query string, args []interface{}) ([]uint32, error) {
-	createdIds := make([]uint32, 0)
+func InsertManyAndReturnIDs(ctx context.Context, db *sql.DB, query string, args []interface{}) ([]int64, error) {
+	createdIds := make([]int64, 0)
 
 	res, err := db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -182,7 +182,7 @@ func InsertManyAndReturnIDs(ctx context.Context, db *sql.DB, query string, args 
 	curId := firstId
 
 	for curId <= lastId {
-		id := uint32(curId)
+		id := int64(curId)
 		createdIds = append(createdIds, id)
 		curId += 1
 	}

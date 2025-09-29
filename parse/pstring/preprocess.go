@@ -1,4 +1,4 @@
-package string
+package pstring
 
 import (
 	"slices"

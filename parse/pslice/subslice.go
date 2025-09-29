@@ -1,4 +1,4 @@
-package slice
+package pslice
 
 func SubSlice[T any](items []T, size int) [][]T {
 	if size <= 0 {
